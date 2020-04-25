@@ -17,6 +17,34 @@ class Line:
         else:
             raise TypeError
 
+    def sample(self, t):
+        if t < 0:
+            raise ValueError
+        if t > 1:
+            raise ValueError
+        x = self.start.x
+        y = self.start.y
+        x += t * (self.end.x - self.start.x)
+        y += t * (self.end.y - self.start.y)
+        return(Point(x, y))
+
+
+class Curve:
+
+    def __init__(self, p0, p1, p2):
+        self.l0 = Line(p0, p1)
+        self.l1 = Line(p1, p2)
+
+    def sample(self, t):
+        if t < 0:
+            raise ValueError
+        if t > 1:
+            raise ValueError
+        q0 = self.l0.sample(t)
+        q1 = self.l1.sample(t)
+        qline = Line(q0, q1)
+        return(qline.sample(t))
+
 
 class Raster():
 
@@ -52,9 +80,12 @@ class Raster():
 
 example = Raster(425, 550)
 
-i = 100
-while i < 300:
-    example.draw(Point(i, i))
+c = Curve(Point(10,10), Point(410, 310), Point(110, 110))
+
+i = 0
+m = 100000
+while i <= m:
+    example.draw(c.sample(i/m))
     i += 1
 
-example.save('example.pbm')
+example.save("example.pbm")
