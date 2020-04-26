@@ -4,6 +4,10 @@ class Point:
         self.x = round(x)
         self.y = round(y)
 
+    def __repr__(self):
+        r = "Point(" + str(self.x) + ", " + str(self.y) + ")"
+        return(r)
+
 
 class Line:
 
@@ -28,6 +32,14 @@ class Line:
         y += t * (self.end.y - self.start.y)
         return(Point(x, y))
 
+    def __repr__(self):
+        r = "Line("
+        r += self.start.__repr__()
+        r += ", "
+        r += self.end.__repr__()
+        r += ")"
+        return(r)
+
 
 class Curve:
 
@@ -44,6 +56,16 @@ class Curve:
         q1 = self.l1.sample(t)
         qline = Line(q0, q1)
         return(qline.sample(t))
+
+    def __repr__(self):
+        r = "Curve("
+        r += self.l0.start.__repr__()
+        r += ", "
+        r += self.l0.end.__repr__()
+        r += ", "
+        r += self.l1.end.__repr__()
+        r += ")"
+        return(r)
 
 
 class Raster():
@@ -77,15 +99,46 @@ class Raster():
         f.close()
 
 
+class Path:
+
+    def __init__(self, pathstring):
+        self.pathstring = pathstring
+        self.linecurves = []
+        last = None
+        op = None
+        coord = None
+        points = []
+
+        for token in pathstring.split(" "):
+            if token == "-":
+                points.append(last)
+            elif token[0] in "1234567890":
+                token = float(token)
+                if coord:
+                    last = Point(coord, token)
+                    points.append(last)
+                    coord = None
+                else:
+                    coord = token
+            elif token in "LC":
+                op = token
+            if op == "L" and len(points) == 2:
+                self.linecurves.append(Line(points[0], points[1]))
+                points = []
+            elif op == "C" and len(points) == 3:
+                self.linecurves.append(Curve(points[0], points[1], points[2]))
+                points = []
+
+    def render(self, raster, samplenum):
+        for lc in self.linecurves:
+            i = 0
+            while i < samplenum:
+                raster.draw(lc.sample(i/samplenum))
+                i += 1
+
+
 
 example = Raster(425, 550)
-
-c = Curve(Point(10,10), Point(410, 310), Point(110, 110))
-
-i = 0
-m = 100000
-while i <= m:
-    example.draw(c.sample(i/m))
-    i += 1
-
+p = Path("C 60 10 110 10 110 60 C - 110 110 60 110 C - 10 110 10 60 C - 10 10 60 10")
+p.render(example, 100000)
 example.save("example.pbm")
